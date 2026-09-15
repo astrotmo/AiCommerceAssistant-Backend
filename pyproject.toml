@@ -13,6 +13,7 @@ dependencies = [
   "mcp>=1.0.0",            # official MCP SDK (client + server)
   # Optional fallback if your environment lacks mcp.server.fastmcp:
   # "fastmcp>=0.2.0",
+  "pyjwt>=2.10,<3",
 ]
 
 [tool.uv]

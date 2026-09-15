@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, HTTPException, Depends
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -37,6 +37,10 @@ from openai.types.chat import ChatCompletionToolUnionParam
 from backend.app.services.domain_knowledge_loader import JsonDomainTermsProvider
 from backend.app.services.domain_knowledge_prompt import build_domain_knowledge_prompt_block
 from backend.app.services.domain_knowledge_resolver import DomainKnowledgeResolver
+from backend.app.security.security import (
+    load_service_auth_secret,
+    require_service_auth,
+)
 
 load_dotenv()
 
@@ -957,6 +961,8 @@ async def lifespan(app: FastAPI):
     """Close the cached MCP connection when FastAPI shuts down."""
     # startup: optionally warm up the MCP connection
     # await mcp_cache._ensure_connected()
+    app.state.service_auth_secret = load_service_auth_secret()
+
     yield
     # shutdown:
     await mcp_cache.close()
@@ -983,8 +989,11 @@ app.add_middleware(
 async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
     """Expose application ``HTTPException`` failures as ``{"message": ...}``."""
     detail = exc.detail if isinstance(exc.detail, str) else "Request failed"
-    return JSONResponse(status_code=exc.status_code, content={"message": detail})
-
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"message": detail},
+        headers=exc.headers,
+    )
 
 @app.exception_handler(RequestValidationError)
 async def request_validation_exception_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -1019,7 +1028,7 @@ def health():
     }
 
 
-@app.post("/chat")
+@app.post("/chat", dependencies=[Depends(require_service_auth)])
 async def chat(in_: ChatIn, request: Request):
     """Orchestrate one public storefront chat request.
 
@@ -1145,7 +1154,7 @@ async def chat(in_: ChatIn, request: Request):
         raise HTTPException(status_code=502, detail=f"Chat backend failed: {exc}") from exc
 
 
-@app.get("/trace/{request_id}")
+@app.get("/trace/{request_id}", dependencies=[Depends(require_service_auth)])
 def get_trace(request_id: str):
     """Return a model-complete request's current in-memory trace.
 
