@@ -1,6 +1,6 @@
 [project]
 name = "shopware-ollama-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Chat backend that bridges Shopware product data to a local Ollama model via MCP tools."
 readme = "README.md"
 requires-python = ">=3.10"

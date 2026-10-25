@@ -156,6 +156,10 @@ MCP, or Shopware.
 
 ### `POST /chat`
 
+Requires a short-lived service JWT from the Shopware proxy; see
+[release migration steps](docs/release.md). `AICA_BACKEND_SECRET` must be supplied
+identically in both runtime environments (64 lowercase hexadecimal characters).
+
 Chat endpoint for the storefront frontend.
 
 **Request Body (example):**
@@ -182,9 +186,8 @@ legacy output. See `FORMAT_PROMPT_PUBLIC`, `normalize_chat_reply`, and
 
 Optional trace endpoint when `TRACE_ENABLED=1` is set. Traces are stored after
 both model phases, before response normalization, and become eligible for lazy
-removal after ten minutes. The endpoint has no application-level
-authentication, so tracing should remain restricted to an appropriately
-protected development environment.
+removal after ten minutes. The endpoint requires the same service JWT as `/chat`. Tracing should remain
+restricted to an appropriately protected development environment.
 
 ## MCP Tools (Shopware)
 
@@ -213,3 +216,7 @@ These tools use the Shopware Admin API via OAuth Client Credentials.
 ## License
 
 MIT
+
+## Versionierte Pakete
+
+Release-Hinweise, Build und manuelle Schritte: [docs/release.md](docs/release.md).
